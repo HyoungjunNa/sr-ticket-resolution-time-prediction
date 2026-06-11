@@ -2,9 +2,10 @@ import os
 from generate_mock_data import generate_sr_data
 from experiment import run_experiments
 from compare_results import generate_comparison_report
+from config import DATA_FILE
 
 def main():
-    data_file = 'sr_data.csv'
+    data_file = DATA_FILE
     
     # 1. 데이터 확인 및 가상 데이터 생성
     if not os.path.exists(data_file):

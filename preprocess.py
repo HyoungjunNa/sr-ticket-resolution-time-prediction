@@ -64,9 +64,17 @@ class SRDataPreprocessor:
             )
 
     def _split_structured_columns(self, df):
-        structured_df = df[self.structured_cols]
+        available_structured_cols = [
+            col for col in self.structured_cols
+            if not df[col].replace('', np.nan).isna().all()
+        ]
+        skipped_cols = [col for col in self.structured_cols if col not in available_structured_cols]
+        if skipped_cols:
+            print(f"값이 모두 비어 있어 제외한 정형 컬럼: {skipped_cols}")
+
+        structured_df = df[available_structured_cols]
         self.numeric_cols = structured_df.select_dtypes(include=[np.number, 'bool']).columns.tolist()
-        self.categorical_cols = [col for col in self.structured_cols if col not in self.numeric_cols]
+        self.categorical_cols = [col for col in available_structured_cols if col not in self.numeric_cols]
 
     def _fit_transform_structured(self, train_df):
         self._split_structured_columns(train_df)

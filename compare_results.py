@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from config import MAX_TEXT_FEATURES, STRUCTURED_COLUMNS, TEXT_COLUMNS
+from config import DATA_FILE, MAX_TEXT_FEATURES, STRUCTURED_COLUMNS, TARGET_DURATION_SECONDS_COLUMN, TEXT_COLUMNS
 from data_loader import load_and_split_data
 from models import get_regression_models
 from preprocess import SRDataPreprocessor
@@ -17,12 +17,20 @@ plt.rcParams['axes.unicode_minus'] = False
 
 def _ensure_metrics(df):
     """이전 결과 CSV와의 호환성을 위해 없는 지표 컬럼을 보정합니다."""
+    if 'MAE_sec' not in df.columns and 'MAE_min' in df.columns:
+        df['MAE_sec'] = df['MAE_min'] * 60.0
+    if 'MAE_hour' not in df.columns and 'MAE_min' in df.columns:
+        df['MAE_hour'] = df['MAE_min'] / 60.0
     if 'RMSE_min' not in df.columns:
         df['RMSE_min'] = np.nan
+    if 'RMSE_sec' not in df.columns:
+        df['RMSE_sec'] = df['RMSE_min'] * 60.0
+    if 'RMSE_hour' not in df.columns:
+        df['RMSE_hour'] = df['RMSE_min'] / 60.0
     return df
 
 
-def generate_comparison_report(results_path='experiment_results.csv', data_path='sr_data.csv'):
+def generate_comparison_report(results_path='experiment_results.csv', data_path=DATA_FILE):
     if not os.path.exists(results_path):
         raise FileNotFoundError(f"실험 결과 파일 '{results_path}'이 없습니다. 먼저 experiment.py를 실행해주세요.")
 
@@ -38,13 +46,17 @@ def generate_comparison_report(results_path='experiment_results.csv', data_path=
 
     # 콘솔 테이블 출력
     print("\n" + "="*86)
-    print(f"{'모델':<30} {'MAE(분)':<12} {'RMSE(분)':<12} {'R²':<10} {'학습시간':<10}")
+    print(f"{'모델':<30} {'MAE(초)':<12} {'MAE(분)':<12} {'RMSE(분)':<12} {'R²':<10} {'학습시간':<10}")
     print("-"*86)
     for group_df, prefix in [(tfidf_df, 'TF-IDF'), (kobert_df, 'KoBERT')]:
         for _, row in group_df.iterrows():
             combined_name = f"{prefix} + {row['Model']}"
             rmse_text = '-' if pd.isna(row['RMSE_min']) else f"{row['RMSE_min']:.2f}분"
-            print(f"{combined_name:<30} {row['MAE_min']:.2f}분{'':<5} {rmse_text:<12} {row['R2']:.4f}{'':<6} {row['TrainTime']}")
+            print(
+                f"{combined_name:<30} {row['MAE_sec']:.0f}초{'':<5} "
+                f"{row['MAE_min']:.2f}분{'':<5} {rmse_text:<12} "
+                f"{row['R2']:.4f}{'':<6} {row['TrainTime']}"
+            )
         print("-"*86)
     print("="*86 + "\n")
 
@@ -112,7 +124,7 @@ def generate_comparison_report(results_path='experiment_results.csv', data_path=
 def _format_rmse(row):
     if pd.isna(row['RMSE_min']):
         return '-'
-    return f"{row['RMSE_min']:.2f}분 ({row['RMSE_min']/60.0:.2f}시간)"
+    return f"{row['RMSE_sec']:.0f}초 / {row['RMSE_min']:.2f}분 ({row['RMSE_hour']:.2f}시간)"
 
 
 def write_markdown_summary(df, feature_names, importances, indices, top_n):
@@ -135,25 +147,25 @@ def write_markdown_summary(df, feature_names, importances, indices, top_n):
 
 * 정형(노란색) 컬럼: `{', '.join(STRUCTURED_COLUMNS)}`
 * 비정형(주황색) 컬럼: `{', '.join(TEXT_COLUMNS)}`
-* 타겟: `closed_at - opened_at`으로 계산한 처리시간(시간 단위)을 예측하고, 결과는 분 단위 MAE/RMSE로 해석합니다.
+* 타겟: 원본 `{TARGET_DURATION_SECONDS_COLUMN}` 컬럼의 처리시간(seconds)을 사용합니다. 모델 내부에서는 hours로 변환해 학습하고, 결과는 초/분/시간 단위 MAE/RMSE로 해석합니다.
 
 ## 1. 모델별 성능 비교표
 
-| 모델 조합 | MAE (오차 시간/분) | RMSE (오차 시간/분) | R² Score (결정계수) | 학습시간 |
+| 모델 조합 | MAE (초/분/시간) | RMSE (초/분/시간) | R² Score (결정계수) | 학습시간 |
 | :--- | :---: | :---: | :---: | :---: |
 """
     report_content += "| **[TF-IDF 계열]** | | | | |\n"
     for _, row in tfidf_group.iterrows():
-        report_content += f"| TF-IDF + {row['Model']} | {row['MAE_min']:.2f}분 ({row['MAE_min']/60.0:.2f}시간) | {_format_rmse(row)} | {row['R2']:.4f} | {row['TrainTime']} |\n"
+        report_content += f"| TF-IDF + {row['Model']} | {row['MAE_sec']:.0f}초 / {row['MAE_min']:.2f}분 ({row['MAE_hour']:.2f}시간) | {_format_rmse(row)} | {row['R2']:.4f} | {row['TrainTime']} |\n"
 
     report_content += "| **[KoBERT 계열]** | | | | |\n"
     for _, row in kobert_group.iterrows():
-        report_content += f"| KoBERT + {row['Model']} | {row['MAE_min']:.2f}분 ({row['MAE_min']/60.0:.2f}시간) | {_format_rmse(row)} | {row['R2']:.4f} | {row['TrainTime']} |\n"
+        report_content += f"| KoBERT + {row['Model']} | {row['MAE_sec']:.0f}초 / {row['MAE_min']:.2f}분 ({row['MAE_hour']:.2f}시간) | {_format_rmse(row)} | {row['R2']:.4f} | {row['TrainTime']} |\n"
 
     report_content += f"""
 ## 2. 주요 분석 결과 요약
 
-* **운영 추천 모델(낮은 MAE 기준)**: **{best_row['Scenario']} + {best_row['Model']}** 모델이 **MAE = {best_row['MAE_min']:.2f}분**(R² = {best_row['R2']:.4f})으로 평균 절대 오차가 가장 낮았습니다.
+* **운영 추천 모델(낮은 MAE 기준)**: **{best_row['Scenario']} + {best_row['Model']}** 모델이 **MAE = {best_row['MAE_sec']:.0f}초 / {best_row['MAE_min']:.2f}분**(R² = {best_row['R2']:.4f})으로 평균 절대 오차가 가장 낮았습니다.
 * **설명력 최고 모델(R² 기준)**: **{best_r2_row['Scenario']} + {best_r2_row['Model']}** 모델이 **R² = {best_r2_row['R2']:.4f}**를 기록했습니다.
 * **TF-IDF vs KoBERT 평균 비교**: KoBERT 계열의 평균 MAE는 TF-IDF 계열 대비 약 **{abs(kobert_improvement):.2f}% {comparison_word}**. 실제 운영에서는 정확도뿐 아니라 KoBERT 임베딩 추출 비용, GPU/CPU 환경, 배포 지연시간을 함께 고려해야 합니다.
 * **해석 가능성**: 업무 현업과 원인 분석을 같이 해야 한다면 TF-IDF + 트리 계열 모델은 중요한 단어/정형 속성을 바로 확인할 수 있어 설명이 쉽습니다. KoBERT는 문맥 반영력이 장점이지만 개별 피처 해석은 상대적으로 어렵습니다.
@@ -172,7 +184,7 @@ def write_markdown_summary(df, feature_names, importances, indices, top_n):
     report_content += """
 ## 4. 추가로 확정하면 좋은 사항
 
-* **예측 단위**: 처리시간을 시간/분으로 예측할지, SLA 구간(예: 4시간 이내/24시간 이내/초과) 분류도 같이 볼지 정해야 합니다.
+* **예측 단위**: 원본 타겟은 seconds이지만, 운영 화면에는 초/분/시간 중 어떤 단위로 보여줄지와 SLA 구간(예: 4시간 이내/24시간 이내/초과) 분류도 같이 볼지 정해야 합니다.
 * **평가 기준**: MAE 최소화, SLA 초과 티켓 탐지, 긴급 티켓 오차 최소화 중 어떤 목표를 1순위로 둘지 정해야 합니다.
 * **데이터 제외 기준**: 취소/중복/보류 상태 티켓, 음수 또는 비정상 처리시간, 업무시간 외 대기시간 포함 여부를 정해야 합니다.
 * **날짜 파생변수**: 접수 요일, 접수 시간대, 휴일 여부, 월말/월초 여부를 정형 컬럼에 추가할지 검토하면 성능 개선 여지가 있습니다.

@@ -5,9 +5,9 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from data_loader import load_and_split_data
 from preprocess import SRDataPreprocessor
 from models import get_regression_models
-from config import BERT_MODEL_NAME, MAX_TEXT_FEATURES
+from config import BERT_MODEL_NAME, DATA_FILE, MAX_TEXT_FEATURES
 
-def run_experiments(data_path='sr_data.csv', output_path='experiment_results.csv'):
+def run_experiments(data_path=DATA_FILE, output_path='experiment_results.csv'):
     # 1. 데이터 로드 및 70:30 분할
     train_df, test_df = load_and_split_data(data_path)
     
@@ -60,23 +60,33 @@ def run_experiments(data_path='sr_data.csv', output_path='experiment_results.csv
                 training_time_str = f"{elapsed_seconds / 60.0:.1f}분"
                 
             # 평가지표 계산
-            # MAE(시간 단위)를 분(minutes) 단위로 환산
+            # y는 원본 complete duration(seconds)을 hours로 변환한 값입니다.
+            # 보고서 가독성을 위해 seconds/minutes/hours 지표를 함께 저장합니다.
             mae_hours = mean_absolute_error(y_test, y_pred)
+            mae_seconds = mae_hours * 3600.0
             mae_minutes = mae_hours * 60.0
             
             # R2 Score 및 RMSE
             rmse_hours = np.sqrt(mean_squared_error(y_test, y_pred))
+            rmse_seconds = rmse_hours * 3600.0
             rmse_minutes = rmse_hours * 60.0
             r2 = r2_score(y_test, y_pred)
             
-            print(f"결과 - MAE: {mae_minutes:.2f}분 | R2: {r2:.4f} | 학습시간: {training_time_str}")
+            print(
+                f"결과 - MAE: {mae_minutes:.2f}분 ({mae_seconds:.0f}초) "
+                f"| R2: {r2:.4f} | 학습시간: {training_time_str}"
+            )
             
             # 결과 기록
             results.append({
                 'Scenario': scenario_name,
                 'Model': model_name,
+                'MAE_sec': mae_seconds,
                 'MAE_min': mae_minutes,
+                'MAE_hour': mae_hours,
+                'RMSE_sec': rmse_seconds,
                 'RMSE_min': rmse_minutes,
+                'RMSE_hour': rmse_hours,
                 'R2': r2,
                 'TrainTime': training_time_str,
                 'ElapsedSeconds': elapsed_seconds
