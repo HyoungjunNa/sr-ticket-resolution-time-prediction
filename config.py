@@ -9,20 +9,13 @@ DATA_FILE = "sc_req_item.csv"
 # 노란색(정형)으로 선정한 컬럼입니다. 범주형/숫자형을 모두 넣을 수 있습니다.
 STRUCTURED_COLUMNS = [
     "Item",
-    "Service",
-    "State",
-    "Stage",
-    "Approval",
-    "Assignment group",
-    "Work time(Hour)",
-    "Updates",
+    "Service"
 ]
 
 # 주황색(비정형)으로 선정한 텍스트 컬럼입니다. 여러 컬럼은 공백으로 합쳐서 사용합니다.
 TEXT_COLUMNS = [
     "Short description",
-    "Description",
-    "HTML Description",
+    "merged_description",
 ]
 
 # 처리시간 타겟 생성에 사용할 원본 컬럼입니다.

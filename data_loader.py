@@ -44,6 +44,12 @@ def load_and_split_data(
         raise FileNotFoundError(f"데이터 파일 '{file_path}'을 찾을 수 없습니다. 먼저 데이터를 준비해주세요.")
 
     df = pd.read_csv(file_path)
+    
+    # Description과 Common html description 컬럼을 하나의 컬럼으로 병합
+    df['merged_description'] = (
+        df['Description'].fillna('').astype(str) + ' ' + 
+        df['Common html description'].fillna('').astype(str)
+    )
 
     if duration_seconds_col in df.columns:
         duration_seconds = (
