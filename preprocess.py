@@ -126,7 +126,12 @@ class SRDataPreprocessor:
             import torch
             from transformers import AutoModel, AutoTokenizer
 
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            if torch.cuda.is_available():
+                self.device = torch.device('cuda')
+            elif torch.backends.mps.is_available():
+                self.device = torch.device('mps')
+            else:
+                self.device = torch.device('cpu')
             print(f"KoBERT 모델({self.bert_model_name}) 로드 중... (디바이스: {self.device})")
             self.tokenizer = AutoTokenizer.from_pretrained(self.bert_model_name)
             self.bert_model = AutoModel.from_pretrained(self.bert_model_name).to(self.device)
