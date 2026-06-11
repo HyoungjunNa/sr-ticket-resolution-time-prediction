@@ -5,13 +5,14 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from data_loader import load_and_split_data
 from preprocess import SRDataPreprocessor
 from models import get_regression_models
+from config import BERT_MODEL_NAME, MAX_TEXT_FEATURES
 
 def run_experiments(data_path='sr_data.csv', output_path='experiment_results.csv'):
     # 1. 데이터 로드 및 70:30 분할
     train_df, test_df = load_and_split_data(data_path)
     
     # 2. 전처리 모듈 초기화 (TF-IDF 및 KoBERT 추출 준비)
-    preprocessor = SRDataPreprocessor(max_text_features=100, bert_model_name='kykim/bert-kor-base')
+    preprocessor = SRDataPreprocessor(max_text_features=MAX_TEXT_FEATURES, bert_model_name=BERT_MODEL_NAME)
     
     # X_tfidf_*: 정형 + TF-IDF 피처
     # X_kobert_*: 정형 + KoBERT 피처
@@ -75,6 +76,7 @@ def run_experiments(data_path='sr_data.csv', output_path='experiment_results.csv
                 'Scenario': scenario_name,
                 'Model': model_name,
                 'MAE_min': mae_minutes,
+                'RMSE_min': rmse_minutes,
                 'R2': r2,
                 'TrainTime': training_time_str,
                 'ElapsedSeconds': elapsed_seconds

@@ -13,7 +13,7 @@ def main():
     else:
         print(f"[1단계] 기존 데이터 파일 '{data_file}'을 사용하여 진행합니다.")
         
-    # 2. 모델 학습 및 실험 진행 (정형 vs 정형+자연어 / RF vs XGBoost vs LightGBM)
+    # 2. 모델 학습 및 실험 진행 (TF-IDF vs KoBERT / Ridge, RF, XGBoost, LightGBM 총 8가지)
     print("\n[2단계] 시나리오별 모델 학습 및 비교 실험을 시작합니다...")
     run_experiments(data_path=data_file, output_path='experiment_results.csv')
     
