@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하이퍼파라미터 최적화 (Optuna) 개요</title>
+    <!-- Google Fonts: Inter & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f6fa;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --primary: #0f172a;
+            --accent-blue: #2563eb;
+            --accent-teal: #0d9488;
+            --accent-purple: #7c3aed;
+            --accent-orange: #ea580c;
+            --accent-green: #16a34a;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -2px rgba(0,0,0,0.02);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1280px;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 35px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        /* 헤더 스타일 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 25px;
+            margin-bottom: 25px;
+        }
+
+        .header-title-area h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title-area p {
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+
+        /* 프로세스 미니 타임라인 */
+        .process-steps {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #f1f5f9;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .step.active {
+            background-color: var(--accent-purple);
+            color: #ffffff;
+            border-color: var(--accent-purple);
+        }
+
+        .step-arrow {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        /* 4칸 그리드 레이아웃 */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .panel {
+            background-color: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+        }
+
+        .panel-number {
+            background-color: var(--accent-purple);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* 1. 왜 Optuna인가? */
+        .why-optuna-box {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .search-method {
+            display: flex;
+            gap: 15px;
+            background-color: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .method-icon {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+        }
+
+        .icon-red { background-color: #fef2f2; color: #ef4444; }
+        .icon-yellow { background-color: #fefbeb; color: #f59e0b; }
+        .icon-green { background-color: #ecfdf5; color: #10b981; }
+
+        .method-text h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 2px;
+        }
+
+        .method-text p {
+            font-size: 10.5px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 2. 튜닝 프로세스 흐름도 */
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            min-height: 200px;
+        }
+
+        .flow-svg {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        /* 3. 주요 하이퍼파라미터 정의 */
+        .param-table-wrapper {
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: var(--primary);
+            font-weight: 700;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .param-name {
+            font-family: 'Inter', monospace;
+            font-weight: 700;
+            color: var(--accent-purple);
+            text-align: left;
+        }
+
+        .type-badge {
+            font-size: 9px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+            background-color: #f1f5f9;
+            color: var(--text-secondary);
+        }
+
+        /* 4. 튜닝 최적화 및 이점 */
+        .benefits-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .benefit-item {
+            display: flex;
+            gap: 15px;
+            background-color: #ffffff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .benefit-icon {
+            font-size: 24px;
+        }
+
+        .benefit-text h4 {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 3px;
+        }
+
+        .benefit-text p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 하단 푸터 영역 */
+        .footer {
+            background-color: #f1f5f9;
+            border-radius: 12px;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .footer-badge {
+            background-color: var(--accent-purple);
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        .footer-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 헤더 -->
+    <div class="header">
+        <div class="header-title-area">
+            <h1>🧪 하이퍼파라미터 최적화 (Optuna) 개요</h1>
+            <p>베이지안 최적화 알고리즘 기반 효율적인 탐색 공간 구축 및 모델 튜닝 파이프라인 아키텍처</p>
+        </div>
+        <div class="process-steps">
+            <div class="step">정제 및 변환</div>
+            <div class="step-arrow">➔</div>
+            <div class="step">피처 엔지니어링</div>
+            <div class="step-arrow">➔</div>
+            <div class="step active">Optuna 튜닝 (20% Val)</div>
+            <div class="step-arrow">➔</div>
+            <div class="step">최종 모델 평가</div>
+        </div>
+    </div>
+
+    <!-- 메인 4칸 그리드 -->
+    <div class="grid-layout">
+        <!-- 1. 왜 Optuna인가? -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-number">1</span>
+                <span>왜 Optuna인가? (전통적 방식 vs 베이지안 최적화)</span>
+            </div>
+            <div class="why-optuna-box">
+                <div class="search-method">
+                    <div class="method-icon icon-red">✖</div>
+                    <div class="method-text">
+                        <h4>그리드 서치 (Grid Search) - 격자 탐색</h4>
+                        <p>모든 후보 조합을 균일하게 탐색하므로 불필요한 영역 연산에 엄청난 연산 시간과 리소스가 낭비됩니다.</p>
+                    </div>
+                </div>
+                <div class="search-method">
+                    <div class="method-icon icon-yellow">▲</div>
+                    <div class="method-text">
+                        <h4>랜덤 서치 (Random Search) - 임의 탐색</h4>
+                        <p>조합을 임의로 추출하므로 탐색 효율성이 그리드 대비 개선되나, 이전 탐색 지식(지혜)을 활용하지 못합니다.</p>
+                    </div>
+                </div>
+                <div class="search-method">
+                    <div class="method-icon icon-green">✔</div>
+                    <div class="method-text">
+                        <h4>베이지안 최적화 (Optuna - TPE 방식)</h4>
+                        <p>이전 시도의 성공/실패 데이터를 통계적으로 분석하여 손실 함수가 낮아질 가능성이 높은 영역을 타겟하여 영리하게 집중 탐색합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 튜닝 워크플로우 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-number">2</span>
+                <span>Optuna 탐색 워크플로우 (수행 방식)</span>
+            </div>
+            <div class="flow-container">
+                <svg viewBox="0 0 400 180" class="flow-svg">
+                    <!-- Step 1 -->
+                    <rect x="10" y="60" width="80" height="50" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"></rect>
+                    <text x="50" y="85" text-anchor="middle" font-size="10" font-weight="700" fill="#0369a1">1. Study 생성</text>
+                    <text x="50" y="98" text-anchor="middle" font-size="8" fill="#0369a1">(방향: 최소화)</text>
+                    
+                    <!-- Arrow 1 -->
+                    <path d="M 90 85 L 110 85" stroke="#94a3b8" stroke-width="1.5" fill="none"></path>
+                    <polygon points="110,85 104,82 104,88" fill="#94a3b8"></polygon>
+
+                    <!-- Step 2 -->
+                    <rect x="110" y="15" width="90" height="50" rx="8" fill="#f3e8ff" stroke="#7c3aed" stroke-width="1.5"></rect>
+                    <text x="155" y="40" text-anchor="middle" font-size="10" font-weight="700" fill="#6b21a8">2. 파라미터 제안</text>
+                    <text x="155" y="52" text-anchor="middle" font-size="8" fill="#6b21a8">(TPE 확률 샘플링)</text>
+
+                    <!-- Arrow 2 -->
+                    <path d="M 200 40 L 220 40 Q 265 40 265 60" stroke="#94a3b8" stroke-width="1.5" fill="none"></path>
+                    <polygon points="265,60 262,54 268,54" fill="#94a3b8"></polygon>
+
+                    <!-- Step 3 -->
+                    <rect x="220" y="60" width="90" height="50" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"></rect>
+                    <text x="265" y="85" text-anchor="middle" font-size="10" font-weight="700" fill="#0f766e">3. 모델 학습/평가</text>
+                    <text x="265" y="98" text-anchor="middle" font-size="8" fill="#0f766e">(Train & 20% Val)</text>
+
+                    <!-- Arrow 3 -->
+                    <path d="M 220 85 L 200 85 Q 155 85 155 110" stroke="#94a3b8" stroke-width="1.5" fill="none"></path>
+                    <polygon points="155,110 152,104 158,104" fill="#94a3b8"></polygon>
+
+                    <!-- Step 4 -->
+                    <rect x="110" y="110" width="90" height="50" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"></rect>
+                    <text x="155" y="135" text-anchor="middle" font-size="10" font-weight="700" fill="#c2410c">4. 확률 영역 갱신</text>
+                    <text x="155" y="147" text-anchor="middle" font-size="8" fill="#c2410c">(성공/실패 피드백)</text>
+
+                    <!-- Arrow 4 -->
+                    <path d="M 110 135 L 95 135 Q 50 135 50 110" stroke="#94a3b8" stroke-width="1.5" fill="none"></path>
+                    <polygon points="50,110 47,116 53,116" fill="#94a3b8"></polygon>
+
+                    <!-- Loop Text -->
+                    <text x="265" y="145" text-anchor="middle" font-size="11" font-weight="700" fill="#64748b" opacity="0.6">지정된 횟수 반복</text>
+                </svg>
+            </div>
+        </div>
+
+        <!-- 3. 주요 하이퍼파라미터 정의 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-number">3</span>
+                <span>튜닝 하이퍼파라미터 탐색 범위 (XGBoost 예시)</span>
+            </div>
+            <div class="param-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>파라미터명</th>
+                            <th>타입</th>
+                            <th>탐색 범위 (Search Space)</th>
+                            <th>주요 튜닝 기여</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="param-name">n_estimators</td>
+                            <td><span class="type-badge">Int</span></td>
+                            <td>50 ~ 300 (정수)</td>
+                            <td>트리의 총 개수 정의 (과적합 영향)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">learning_rate</td>
+                            <td><span class="type-badge">Float</span></td>
+                            <td>0.01 ~ 0.2 (로그 스케일)</td>
+                            <td>각 트리의 기여 비중 결정 (학습 가중치)</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">max_depth</td>
+                            <td><span class="type-badge">Int</span></td>
+                            <td>3 ~ 10 (정수)</td>
+                            <td>트리의 최대 수직 깊이 제어</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">subsample</td>
+                            <td><span class="type-badge">Float</span></td>
+                            <td>0.6 ~ 1.0 (실수)</td>
+                            <td>훈련용 데이터셋의 행 샘플링 비율</td>
+                        </tr>
+                        <tr>
+                            <td class="param-name">colsample_bytree</td>
+                            <td><span class="type-badge">Float</span></td>
+                            <td>0.6 ~ 1.0 (실수)</td>
+                            <td>훈련용 트리의 열(피처) 피처 샘플링 비율</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. 튜닝 최적화 및 이점 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-number">4</span>
+                <span>튜닝 기법 고도화의 3대 핵심 성과</span>
+            </div>
+            <div class="benefits-list">
+                <div class="benefit-item">
+                    <span class="benefit-icon">⏱️</span>
+                    <div class="benefit-text">
+                        <h4>튜닝 속도 3배 단축 (300% 가속)</h4>
+                        <p>기존의 3-Fold 교차 검증 대신 <strong>전용 검증 데이터셋(Validation Set, 20%)</strong>을 명시적으로 평가하여 불필요한 모델 재학습 횟수를 단축시켰습니다.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">🛡️</span>
+                    <div class="benefit-text">
+                        <h4>과적합 방지 및 일반화 확보</h4>
+                        <p>완벽히 겹치지 않는 검증셋을 탐색 기준으로 삼아 훈련 오차는 적정히 제어하고 테스트 데이터에 대한 범용 오차 성능을 확보했습니다.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">🔗</span>
+                    <div class="benefit-text">
+                        <h4>파이프라인 자동화 연동</h4>
+                        <p>Optuna의 최종 최적화 파라미터 조합은 [models.py](file:///c:/Users/nhj68/iCloudDrive/%EB%94%94%EC%A7%80%ED%84%B8%EC%9C%B5%ED%95%A9%EC%97%94%EC%A7%80%EB%8B%88%EC%96%B4%EB%A7%81%28%EB%8C%80%ED%95%99%EC%9B%90%29/26%EB%85%84%201%ED%95%99%EA%B8%B0%20%EA%B5%90%EA%B3%BC/%EC%8A%A4%EB%A7%88%ED%8A%B8%EA%B3%B5%EC%9E%A5%EB%A8%B8%EC%8B%A0%EB%9F%AC%EB%8B%9D%EB%AA%A8%EB%8D%B8%EB%A7%81/%EA%B8%B0%EB%A7%90%EA%B3%BC%EC%A0%9C/%EC%86%8C%EC%8A%A4%EC%BD%94%EB%93%9C/sr-ticket-resolution-time-prediction/models.py)에 직접 입력되어 즉시 서비스 모델에 적용 가능하도록 설계되었습니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 푸터 영역 -->
+    <div class="footer">
+        <div class="footer-badge">최종 검증 결론</div>
+        <div class="footer-desc">
+            🚀 베이지안 탐색과 전용 검증셋을 연계한 **Optuna 프레임워크**를 통해 속도와 완성도를 모두 확보한 파라미터 튜닝을 달성했습니다.
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모델 학습 (Model Training) 개요</title>
+    <!-- Google Fonts: Inter & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4f6fa;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --primary: #0f172a;
+            --accent-blue: #2563eb;
+            --accent-teal: #0d9488;
+            --accent-orange: #ea580c;
+            --accent-green: #16a34a;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.06), 0 4px 6px -2px rgba(0,0,0,0.02);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1280px;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 35px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        /* 헤더 스타일 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 25px;
+            margin-bottom: 25px;
+        }
+
+        .header-title-area h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title-area p {
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+
+        /* 프로세스 미니 타임라인 */
+        .process-steps {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #f1f5f9;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .step.active {
+            background-color: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .step-arrow {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        /* 4칸 그리드 레이아웃 */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .panel {
+            background-color: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+        }
+
+        .panel-number {
+            background-color: var(--accent-blue);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        /* 1. 학습 데이터 구성 */
+        .data-panel-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .data-stats-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background-color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .stat-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .pie-chart-wrapper {
+            position: relative;
+            width: 180px;
+            height: 180px;
+        }
+
+        /* 2. 학습 모델 및 알고리즘 */
+        .model-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .model-card {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .model-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .model-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .badge-blue { background-color: #dbeafe; color: #1e40af; }
+        .badge-green { background-color: #dcfce7; color: #166534; }
+        .badge-purple { background-color: #f3e8ff; color: #6b21a8; }
+        .badge-orange { background-color: #ffedd5; color: #9a3412; }
+
+        .model-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .model-feature {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-top: 4px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 4px;
+        }
+
+        /* 3. 학습 전략 및 하이퍼파라미터 튜닝 */
+        .tuning-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tuning-strategy-box {
+            display: flex;
+            gap: 12px;
+            background-color: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .strategy-icon {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+        }
+
+        .strategy-text h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .strategy-text p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 4. 학습 목표 및 손실 함수 */
+        .target-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .formula-box {
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .formula-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .formula-math {
+            font-family: 'Inter', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary);
+            background-color: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .metric-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+        }
+
+        .metric-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .metric-desc {
+            color: var(--text-secondary);
+            font-size: 10px;
+        }
+
+        /* 하단 푸터 영역 (최종 산출물) */
+        .footer {
+            background-color: #f1f5f9;
+            border-radius: 12px;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .footer-badge {
+            background-color: var(--primary);
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .footer-flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .flow-step {
+            background-color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .footer-right {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-bubble {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.5;
+            margin-top: 15px;
+            border: 1px solid #bae6fd;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 헤더 -->
+    <div class="header">
+        <div class="header-title-area">
+            <h1>🧠 모델 학습 (Model Training) 개요</h1>
+            <p>정형/비정형 피처 결합 데이터를 활용한 머신러닝 회귀 학습 및 7:2:1 데이터 분할 아키텍처 개요</p>
+        </div>
+        <div class="process-steps">
+            <div class="step">정제 및 변환</div>
+            <div class="step-arrow">➔</div>
+            <div class="step">TF-IDF / KoBERT</div>
+            <div class="step-arrow">➔</div>
+            <div class="step active">모델 학습 (7:2:1)</div>
+            <div class="step-arrow">➔</div>
+            <div class="step">성능 비교 평가</div>
+        </div>
+    </div>
+
+    <!-- 메인 4칸 그리드 -->
+    <div class="grid-layout">
+        <!-- 1. 학습 데이터 구성 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-number">1</span>
+                <span>학습 데이터 구성 (7:2:1 비율)</span>
+            </div>
+            <div class="data-panel-content">
+                <div class="data-stats-list">
+                    <div class="stat-item">
+                        <span class="stat-icon">📄</span>
+                        <div class="stat-details">
+                            <span class="stat-label">전체 수집 티켓 데이터</span>
+                            <span class="stat-value">9,178 건</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🧹</span>
+                        <div class="stat-details">
+                            <span class="stat-label">이상치(100일 초과) 제거 후</span>
+                            <span class="stat-value">9,141 건</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🎯</span>
+                        <div class="stat-details">
+                            <span class="stat-label">타겟 변수 (Target)</span>
+                            <span class="stat-value">실제 업무 시간 (Business Hours)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pie-chart-wrapper">
+                    <svg width="100%" height="100%" viewBox="0 0 42 42" class="donut">
+                        <circle class="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="#f8fafc"></circle>
+                        <circle class="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#e2e8f0" stroke-width="5"></circle>
+                        
+                        <!-- 70% Train (Blue) -->
+                        <circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#2563eb" stroke-width="5.2" stroke-dasharray="70 30" stroke-dashoffset="25"></circle>
+                        <!-- 20% Val (Green) -->
+                        <circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#10b981" stroke-width="5.2" stroke-dasharray="20 80" stroke-dashoffset="55"></circle>
+                        <!-- 10% Test (Orange) -->
+                        <circle class="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f97316" stroke-width="5.2" stroke-dasharray="10 90" stroke-dashoffset="35"></circle>
+                        
+                        <g class="chart-text">
+                            <text x="50%" y="47%" dominant-baseline="middle" text-anchor="middle" font-size="3.5" font-weight="700" fill="#1e293b">총 9,141건</text>
+                            <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-size="2" font-weight="500" fill="#64748b">비율 분할</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            
+            <div style="display:flex; justify-content: space-around; margin-top: 15px; font-size:12px; font-weight:600;">
+                <span style="color:#2563eb;">■ 학습 (70%): 6,398건</span>
+                <span style="color:#10b981;">■ 검증 (20%): 1,828건</span>
+                <span style="color:#f97316;">■ 테스트 (10%): 915건</span>
+            </div>
+        </div>
+
+        <!-- 2. 학습 모델 및 알고리즘 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-number">2</span>
+                <span>학습 모델 및 알고리즘</span>
+            </div>
+            <div class="model-cards-grid">
+                <div class="model-card">
+                    <div class="model-card-header">
+                        <span class="model-name">Ridge Regression</span>
+                        <span class="model-badge badge-blue">선형 / 해석용이</span>
+                    </div>
+                    <p class="model-desc">선형 가중치 규제를 적용하여 텍스트 계수가 과적합(Overfitting)되지 않도록 억제합니다.</p>
+                </div>
+                <div class="model-card">
+                    <div class="model-card-header">
+                        <span class="model-name">Random Forest</span>
+                        <span class="model-badge badge-green">앙상블 / 강건함</span>
+                    </div>
+                    <p class="model-desc">수많은 의사결정나무 예측을 결합하여 데이터 노이즈에 강인한 성능을 보입니다.</p>
+                </div>
+                <div class="model-card">
+                    <div class="model-card-header">
+                        <span class="model-name">XGBoost</span>
+                        <span class="model-badge badge-purple">GPU가속 / 고성능</span>
+                    </div>
+                    <p class="model-desc">Gradient Boosting 기반으로 연산 속도가 매우 빠르고 잔차 예측이 탁월합니다.</p>
+                </div>
+                <div class="model-card">
+                    <div class="model-card-header">
+                        <span class="model-name">LightGBM</span>
+                        <span class="model-badge badge-orange">메모리 절약 / 효율</span>
+                    </div>
+                    <p class="model-desc">리프 중심 트리 분할로 학습이 가볍고 다차원 TF-IDF 피처 처리에 유리합니다.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 학습 전략 및 하이퍼파라미터 튜닝 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-number">3</span>
+                <span>학습 전략 및 하이퍼파라미터 튜닝</span>
+            </div>
+            <div class="tuning-content">
+                <div class="tuning-strategy-box">
+                    <div class="strategy-icon">🧬</div>
+                    <div class="strategy-text">
+                        <h4>Optuna 자동 하이퍼파라미터 튜닝</h4>
+                        <p>베이지안 최적화 알고리즘 기반으로 최상의 XGBoost 및 LightGBM 하이퍼파라미터 조합을 탐색합니다.</p>
+                    </div>
+                </div>
+                <div class="tuning-strategy-box">
+                    <div class="strategy-icon">⚖️</div>
+                    <div class="strategy-text">
+                        <h4>전용 검증 데이터셋(Validation Set) 적용</h4>
+                        <p>K-Fold의 중복 학습 오버헤드를 탈피하고, 명시된 20%의 전용 검증셋을 평가 기준으로 적용하여 <strong>튜닝 연산 속도를 약 3배 향상</strong>시켰습니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 학습 목표 및 손실 함수 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-number">4</span>
+                <span>학습 목표 및 평가 지표</span>
+            </div>
+            <div class="target-content">
+                <div class="formula-box">
+                    <span class="formula-title">최적화 손실 함수 (MAE)</span>
+                    <div class="formula-math">MAE = 1/n Σ |y_i - ŷ_i|</div>
+                    <p style="font-size:10px; color:var(--text-secondary); text-align:center; line-height:1.3;">평균 절대 오차를 최소화하여 이상치 왜곡에 유연하도록 모델을 학습합니다.</p>
+                </div>
+                
+                <div class="metric-list">
+                    <div class="metric-item">
+                        <span class="metric-name" style="color:var(--accent-blue);">MAE</span>
+                        <span class="metric-desc">평균 절대 오차 (예측 편차)</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-name" style="color:var(--accent-teal);">RMSE</span>
+                        <span class="metric-desc">평균 제곱근 오차 (큰 오차 패널티)</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-name" style="color:var(--accent-green);">R² Score</span>
+                        <span class="metric-desc">결정 계수 (설명력 지표, 최대 1.0)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="info-bubble">
+                💡 <strong>데이터 분할 활용 가이드:</strong> 학습 데이터로 모델을 학습시키고, 검증 데이터(Validation Set)로 최적의 파라미터를 탐색 및 조기 종료하며, 최종 성능 평가는 절대 겹치지 않는 테스트 데이터로 진행합니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 푸터 영역 -->
+    <div class="footer">
+        <div class="footer-left">
+            <div class="footer-badge">최종 산출물</div>
+            <div class="footer-flow">
+                <div class="flow-step">최적 모델 자동 선정</div>
+                <div style="color:#94a3b8;">➔</div>
+                <div class="flow-step">성능 비교 차트 & 보고서</div>
+                <div style="color:#94a3b8;">➔</div>
+                <div class="flow-step">예측 파이프라인 서비스 적용</div>
+            </div>
+        </div>
+        <div class="footer-right">
+            <span>🎯 실제 운영 데이터 기반의 고정밀 SR 처리 시간 예측</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

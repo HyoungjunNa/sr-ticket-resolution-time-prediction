@@ -1,0 +1,40 @@
+import os
+from generate_mock_data import generate_sr_data
+from experiment import run_experiments
+from compare_results import generate_comparison_report
+from config import DATA_FILE
+
+def main():
+    data_file = DATA_FILE
+    
+    # 1. 데이터 확인 및 가상 데이터 생성
+    if not os.path.exists(data_file):
+        print(f"[1단계] '{data_file}' 데이터 파일이 존재하지 않아 가상 데이터를 생성합니다...")
+        generate_sr_data(num_samples=1000)
+    else:
+        print(f"[1단계] 기존 데이터 파일 '{data_file}'을 사용하여 진행합니다.")
+        
+    # 2. 글로벌 모델 학습 및 비교 실험 진행 (이상치 제거 자동 적용)
+    print("\n[2단계] 전체 데이터 대상 글로벌 모델 학습 및 실험을 시작합니다...")
+    run_experiments(
+        data_path=data_file,
+        output_path='experiment_results.csv'
+    )
+    
+    # 3. 실험 결과 분석 및 보고서 시각화 생성
+    print("\n[3단계] 실험 결과 시각화 및 리포트 생성을 진행합니다...")
+    generate_comparison_report(
+        results_path='experiment_results.csv',
+        data_path=data_file
+    )
+    
+    print("\n" + "="*50)
+    print("  전체 프로세스가 완료되었습니다! 다음 파일을 확인하세요:")
+    print("  - 모델 성능 비교 차트: performance_comparison.png")
+    print("  - 피처 중요도 분석 차트: feature_importance.png")
+    print("  - 상세 비교 보고서: report_summary.md")
+    print("  - 실험 결과 요약 CSV: experiment_results.csv")
+    print("="*50)
+
+if __name__ == '__main__':
+    main()
